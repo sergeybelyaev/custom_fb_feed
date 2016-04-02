@@ -1,0 +1,5 @@
+name = Custom Facebook feed
+description = Provides Facebook feed in block
+core = 7.x
+package = Custom modules
+configure = admin/config/services/custom_fb_feed

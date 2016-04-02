@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function custom_fb_feed_menu() {
+  $items = array();
+  $items['admin/config/services/custom_fb_feed'] = array(
+    'title' => 'Custom Facebook Feed',
+    'description' => 'Configuration for Custom Facebook Feed module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_custom_fb_feed_settings'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+function _custom_fb_feed_settings($form, &$form_state) {
+  $form['custom_fb_feed_page_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Facebook Page Name'),
+    '#default_value' => variable_get('custom_fb_feed_page_name'),
+    '#required' => TRUE,
+  );
+  $form['custom_fb_feed_app_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Facebook App ID'),
+    '#default_value' => variable_get('custom_fb_feed_app_id'),
+    '#size' => 60,
+  );
+  $form['custom_fb_feed_secret_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Facebook Secret Key'),
+    '#default_value' => variable_get('custom_fb_feed_secret_key'),
+    '#required' => TRUE,
+  );
+  $form['custom_fb_feed_feeds_number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of Feeds'),
+    '#default_value' => variable_get('custom_fb_feed_feeds_number', 10),
+    '#size' => 2,
+    '#maxlength' => 2,
+    '#element_validate' => array('element_validate_integer_positive'),
+  );
+  return system_settings_form($form);
+}
+
+
+/**
+ * Implements hook_block_info().
+ */
+function custom_fb_feed_block_info() {
+  $blocks = array();
+  $blocks['fb_feed'] = array(
+    'info' => t('Facebook feed'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function custom_fb_feed_block_view($delta='') {
+  $block = array();
+  switch($delta) {
+    case 'fb_feed':
+      $block['subject'] = t('Facebook feed');
+      $block['content'] = _custom_fb_feed_block_view();
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function custom_fb_feed_theme($existing, $type, $theme, $path) {
+  return array(
+    'custom_fb_feed_facebook' => array(
+      'variables' => array('feed' => NULL),
+      'template' => 'custom_fb_feed_facebook',
+    ),
+  );
+}
+
+
+function _custom_fb_feed_block_view() {
+  $feed = array();
+  $page_name = variable_get('custom_fb_feed_page_name');
+  $app_id = variable_get('custom_fb_feed_app_id');
+  $secret = variable_get('custom_fb_feed_secret_key');
+  $limit = variable_get('custom_fb_feed_feeds_number', 10);
+  $url = "https://graph.facebook.com/" . $page_name . "/feed?limit=" . $limit . "&access_token=" . $app_id . "|" . $secret . "&posts&fields=id,picture,type,story,from,message,status_type,object_id,name,caption,description,link,created_time,comments.limit(1).summary(true),likes.limit(1).summary(true)";
+  $request = drupal_http_request($url);
+  if ($request->status_message == "OK") {
+    $json_response = drupal_json_decode($request->data);
+    foreach ($json_response['data'] as $value) {
+      $feed[] = $value;
+    }
+  }
+  return theme('custom_fb_feed_facebook', array('facebook' => $feed));
+}
