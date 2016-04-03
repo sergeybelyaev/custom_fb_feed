@@ -27,7 +27,7 @@ function _custom_fb_feed_settings($form, &$form_state) {
     '#type' => 'textfield',
     '#title' => t('Facebook App ID'),
     '#default_value' => variable_get('custom_fb_feed_app_id'),
-    '#size' => 60,
+    '#required' => TRUE,
   );
   $form['custom_fb_feed_secret_key'] = array(
     '#type' => 'textfield',
@@ -78,7 +78,7 @@ function custom_fb_feed_block_view($delta='') {
 function custom_fb_feed_theme($existing, $type, $theme, $path) {
   return array(
     'custom_fb_feed_facebook' => array(
-      'variables' => array('feed' => NULL),
+      'variables' => array('facebook' => NULL),
       'template' => 'custom_fb_feed_facebook',
     ),
   );
